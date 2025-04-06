@@ -1,0 +1,51 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  min-height: 100vh;
+  background-color: #ffffff;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fix for the FormikTextField to ensure error messages don't cause layout shifts */
+.MuiFormHelperText-root {
+  min-height: 1.25rem;
+}
+
+/* Ensure input fields are properly centered */
+.MuiTextField-root {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Fix for container centering */
+.MuiContainer-root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+/* Make paper container centered */
+.MuiPaper-root {
+  margin-left: auto;
+  margin-right: auto;
+}
