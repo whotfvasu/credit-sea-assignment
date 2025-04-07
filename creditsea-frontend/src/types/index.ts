@@ -78,8 +78,8 @@ export interface UserProfile {
   _id?: string;
   name: string;
   email: string;
-  phone: string;
-  address: string;
+  phone?: string;
+  address?: string;
   gender?: string;
   idNumber?: string;
   role: UserRole;

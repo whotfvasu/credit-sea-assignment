@@ -22,7 +22,6 @@ import {
   Card,
   CardContent
 } from '@mui/material';
-import { format } from 'date-fns';
 import { loanService } from '../../services/api';
 import { LoanApplication, LoanStatus } from '../../types';
 
@@ -63,42 +62,45 @@ const AdminLoans = () => {
     setOpenRejectDialog(true);
   };
 
-  const handleApproveConfirm = async () => {
-    if (!selectedLoan) return;
-    
-    try {
-      setActionLoading(true);
-      await loanService.approveLoanApplication(selectedLoan.id);
-      
-      // Refresh loans
-      fetchLoans();
-      
-      setOpenApproveDialog(false);
-    } catch (err) {
-      console.error('Failed to approve loan:', err);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  // APPROVE CONFIRM FUNCTION
+const handleApproveConfirm = async () => {
+  if (!selectedLoan) return;
 
-  const handleRejectConfirm = async () => {
-    if (!selectedLoan || !rejectionReason.trim()) return;
-    
-    try {
-      setActionLoading(true);
-      await loanService.rejectLoanApplication(selectedLoan.id, rejectionReason);
-      
-      // Refresh loans
-      fetchLoans();
-      
-      setRejectionReason('');
-      setOpenRejectDialog(false);
-    } catch (err) {
-      console.error('Failed to reject loan:', err);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  try {
+    setActionLoading(true);
+    await loanService.approveLoanApplication(selectedLoan.id!); // <-- FIXED
+
+    // Refresh loans
+    fetchLoans();
+
+    setOpenApproveDialog(false);
+  } catch (err) {
+    console.error('Failed to approve loan:', err);
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+// REJECT CONFIRM FUNCTION
+const handleRejectConfirm = async () => {
+  if (!selectedLoan || !rejectionReason.trim()) return;
+
+  try {
+    setActionLoading(true);
+    await loanService.rejectLoanApplication(selectedLoan.id!, rejectionReason); // <-- FIXED
+
+    // Refresh loans
+    fetchLoans();
+
+    setRejectionReason('');
+    setOpenRejectDialog(false);
+  } catch (err) {
+    console.error('Failed to reject loan:', err);
+  } finally {
+    setActionLoading(false);
+  }
+};
+
 
   // Status chip component
   const StatusChip = ({ status }: { status: LoanStatus }) => {
@@ -219,7 +221,7 @@ const AdminLoans = () => {
                         <Typography variant="caption" color="textSecondary">{loan.email}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>${loan.loanAmount.toLocaleString()}</TableCell>
+                    <TableCell>${loan.amount.toLocaleString()}</TableCell>
                     <TableCell>{loan.purpose}</TableCell>
                     <TableCell>{loan.verifiedBy || '-'}</TableCell>
                     <TableCell>

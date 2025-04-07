@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -32,15 +32,10 @@ import {
 import {
   Add as AddIcon,
   Assignment as AssignmentIcon,
-  AccountBalance as AccountBalanceIcon,
-  CreditCard as CreditCardIcon,
   Money as MoneyIcon,
   Person as PersonIcon,
-  CalendarToday as CalendarIcon,
-  AttachMoney as AttachMoneyIcon,
-  Payment as PaymentIcon,
   Close as CloseIcon,
-  Check as CheckIcon
+
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths } from 'date-fns';

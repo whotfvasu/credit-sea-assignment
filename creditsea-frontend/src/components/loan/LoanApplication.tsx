@@ -21,6 +21,7 @@ import {
   InputAdornment,
   Container
 } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 import { useNavigate } from 'react-router-dom';
 import { loanService, userService } from '../../services/api';
 
@@ -57,13 +58,18 @@ const steps = [
   'Review & Submit'
 ];
 
+// Create a union type for events from TextField and Select
+type CombinedEvent =
+  | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  | SelectChangeEvent<unknown>;
+
 const LoanApplication = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [setUserProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   // Form state
@@ -115,20 +121,15 @@ const LoanApplication = () => {
     fetchUserProfile();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  // Use a single handler with a union type for both TextField and Select components
+  const handleChange = (e: CombinedEvent) => {
     const { name, value } = e.target;
     if (name) {
-      setFormData({
-        ...formData,
-        [name]: value
-      });
+      setFormData((prevData) => ({ ...prevData, [name]: value }));
       
       // Clear error for this field if it exists
       if (formErrors[name]) {
-        setFormErrors({
-          ...formErrors,
-          [name]: ''
-        });
+        setFormErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
       }
     }
   };
@@ -174,38 +175,38 @@ const LoanApplication = () => {
   };
 
   const handleSubmit = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    // Format the data with the correct field name
-    const loanApplication = {
-      applicantName: formData.fullName,
-      email: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').email : '',
-      phone: formData.phone,
-      address: formData.address,
-      loanAmount: parseFloat(formData.loanAmount), // Use the correct field name
-      purpose: formData.purpose
-    };
-    
-    console.log('Submitting data:', loanApplication);
-    
-    const response = await loanService.submitLoanApplication(loanApplication);
-    console.log('Loan application submitted:', response);
-    
-    setSuccess(true);
-    
-    // Reset form after submission
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 3000);
-  } catch (err: any) {
-    console.error('Failed to submit loan application:', err);
-    setError(err.response?.data?.message || 'Failed to submit loan application. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Format the data with the correct field name
+      const loanApplication = {
+        applicantName: formData.fullName,
+        email: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').email : '',
+        phone: formData.phone,
+        address: formData.address,
+        loanAmount: parseFloat(formData.loanAmount), // Ensure it's a number
+        purpose: formData.purpose
+      };
+      
+      console.log('Submitting data:', loanApplication);
+      
+      const response = await loanService.submitLoanApplication(loanApplication);
+      console.log('Loan application submitted:', response);
+      
+      setSuccess(true);
+      
+      // Reset form after submission
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 3000);
+    } catch (err: any) {
+      console.error('Failed to submit loan application:', err);
+      setError(err.response?.data?.message || 'Failed to submit loan application. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loadingProfile) {
     return (
@@ -303,7 +304,9 @@ const LoanApplication = () => {
                   onChange={handleChange}
                 >
                   {loanTerms.map((term) => (
-                    <MenuItem key={term} value={term}>{term} months</MenuItem>
+                    <MenuItem key={term} value={term}>
+                      {term} months
+                    </MenuItem>
                   ))}
                 </Select>
                 {formErrors.term && <FormHelperText>{formErrors.term}</FormHelperText>}
@@ -319,7 +322,9 @@ const LoanApplication = () => {
                   onChange={handleChange}
                 >
                   {loanPurposes.map((purpose) => (
-                    <MenuItem key={purpose} value={purpose}>{purpose}</MenuItem>
+                    <MenuItem key={purpose} value={purpose}>
+                      {purpose}
+                    </MenuItem>
                   ))}
                 </Select>
                 {formErrors.purpose && <FormHelperText>{formErrors.purpose}</FormHelperText>}
@@ -357,7 +362,9 @@ const LoanApplication = () => {
                   onChange={handleChange}
                 >
                   {employmentStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
                   ))}
                 </Select>
                 {formErrors.employmentStatus && <FormHelperText>{formErrors.employmentStatus}</FormHelperText>}
@@ -474,7 +481,9 @@ const LoanApplication = () => {
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2">Bank Details</Typography>
-                <Typography>{formData.bankName}, Account: {formData.accountNumber}</Typography>
+                <Typography>
+                  {formData.bankName}, Account: {formData.accountNumber}
+                </Typography>
               </Grid>
             </Grid>
           </Box>

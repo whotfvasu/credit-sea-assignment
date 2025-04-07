@@ -300,7 +300,7 @@ const VerifierLoans = () => {
                         <Typography variant="caption" color="textSecondary">{loan.email}</Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>${loan.loanAmount.toLocaleString()}</TableCell>
+                    <TableCell>${loan.amount.toLocaleString()}</TableCell>
                     <TableCell>{loan.purpose}</TableCell>
                     <TableCell>
                       {format(new Date(loan.createdAt), 'MMM dd, yyyy')}

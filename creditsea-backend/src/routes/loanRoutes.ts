@@ -6,8 +6,8 @@ import { UserRole } from '../models/User';
 const router = Router();
 
 // User routes
-router.post('/apply', auth, loanController.submitLoanApplication);
-router.get('/user', auth, loanController.getUserLoanApplications);
+router.post('/apply', auth, loanController.createLoanApplication);
+router.get('/user', auth, loanController.getAllLoanApplications);
 
 // Verifier routes
 router.get('/', auth, authorize([UserRole.VERIFIER, UserRole.ADMIN]), loanController.getAllLoanApplications);

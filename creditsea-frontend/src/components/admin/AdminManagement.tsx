@@ -30,7 +30,7 @@ import {
 import { Formik, Form, Field, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { userService } from '../../services/api';
-import { User, UserRole } from '../../types';
+import { UserProfile } from '../../types';  // <-- Using UserProfile instead of User
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AdminFormValues {
@@ -41,19 +41,22 @@ interface AdminFormValues {
 }
 
 const AdminManagement = () => {
-  const [admins, setAdmins] = useState<User[]>([]);
+  // Use UserProfile instead of User
+  const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState<User | null>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<UserProfile | null>(null);
+
   const { user } = useAuth();
 
   const fetchAdmins = async () => {
     try {
       setLoading(true);
       const response = await userService.getAllAdmins();
+      // Assuming response.admins is an array of UserProfile
       setAdmins(response.admins);
     } catch (err) {
       console.error('Failed to fetch admins:', err);
@@ -75,23 +78,27 @@ const AdminManagement = () => {
     setOpenDialog(false);
   };
 
-  const handleDeleteClick = (admin: User) => {
+  const handleDeleteClick = (admin: UserProfile) => {
     setSelectedAdmin(admin);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedAdmin) return;
-    
-    try {
-      await userService.deleteUser(selectedAdmin.id);
-      setSuccess(`Admin ${selectedAdmin.name} deleted successfully`);
-      setDeleteDialogOpen(false);
-      fetchAdmins();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete admin');
-    }
-  };
+  if (!selectedAdmin?.id) {
+    // Handle the case where ID is missing:
+    return;
+  }
+  
+  try {
+    await userService.deleteUser(selectedAdmin.id); // Now it's guaranteed to be a string
+    setSuccess(`Admin ${selectedAdmin.name} deleted successfully`);
+    setDeleteDialogOpen(false);
+    fetchAdmins();
+  } catch (err: any) {
+    setError(err.response?.data?.message || 'Failed to delete admin');
+  }
+};
+
 
   const handleDeleteCancel = () => {
     setSelectedAdmin(null);

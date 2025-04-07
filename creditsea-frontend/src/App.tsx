@@ -7,9 +7,9 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import AppNavigation from './components/layout/AppNavigation';
 import UserDashboard from './components/user/UserDashboard';
-import LoanApplication from './components/loan/LoanApplication';
-import VerifierDashboard from './components/verifier/VerifierDashboard';
-import AdminDashboard from './components/admin/AdminDashboard';
+import LoanApplication from './components/loan/LoanApplication.tsx';
+import VerifierDashboard from './components/verifier/VerifierDashboard.tsx';
+import AdminDashboard from './components/admin/AdminDashboard.tsx';
 
 // Import API services
 import { authService } from './services/api';

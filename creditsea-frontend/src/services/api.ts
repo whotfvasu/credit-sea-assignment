@@ -1,9 +1,6 @@
 import axios from 'axios';
 import { 
-  User, 
   LoanApplication, 
-  AuthResponse, 
-  DashboardStats,
   UserProfile,
   UserRole
 } from '../types';
@@ -56,10 +53,10 @@ const getLoanId = (loan: LoanApplication | string): string => {
 // Auth Service
 export const authService = {
   // Login user
-  login: async (email: string, password: string): Promise<AuthResponse> => {
+  login: async (email: string, password: string): Promise<Response> => {
     console.log(`Attempting login for user: ${email}`);
     try {
-      const response = await api.post<AuthResponse>('/auth/login', { email, password });
+      const response = await api.post<Response>('/auth/login', { email, password });
       console.log('Login successful');
       return response.data;
     } catch (error) {
@@ -135,10 +132,10 @@ logout: async () => {
   },
 
   // Get user profile
-  getProfile: async (): Promise<{ user: User }> => {
+  getProfile: async (): Promise<{ user: UserProfile }> => {
     console.log('Fetching user profile');
     try {
-      const response = await api.get<{ user: User }>('/auth/profile');
+      const response = await api.get<{ user: UserProfile }>('/auth/profile');
       console.log('Profile fetched successfully');
       return response.data;
     } catch (error) {
@@ -182,10 +179,10 @@ export const userService = {
   },
   
   // Get all users (for admin)
-  getAllUsers: async (): Promise<{ users: User[] }> => {
+  getAllUsers: async (): Promise<{ users: UserProfile[] }> => {
     console.log('Fetching all users');
     try {
-      const response = await api.get<{ users: User[] }>('/users/all');
+      const response = await api.get<{ users: UserProfile[] }>('/users/all');
       console.log(`Fetched ${response.data.users.length} users`);
       return response.data;
     } catch (error) {
@@ -194,10 +191,10 @@ export const userService = {
     }
   },
   
-  getAllAdmins: async (): Promise<{ admins: User[] }> => {
+  getAllAdmins: async (): Promise<{ admins: UserProfile[] }> => {
     console.log('Fetching all admins');
     try {
-      const response = await api.get<{ admins: User[] }>('/users/admins');
+      const response = await api.get<{ admins: UserProfile[] }>('/users/admins');
       console.log(`Fetched ${response.data.admins.length} admins`);
       return response.data;
     } catch (error) {
@@ -206,10 +203,10 @@ export const userService = {
     }
   },
   
-  createAdmin: async (name: string, email: string, password: string): Promise<{ admin: User; message: string }> => {
+  createAdmin: async (name: string, email: string, password: string): Promise<{ admin: UserProfile; message: string }> => {
     console.log(`Creating new admin: ${email}`);
     try {
-      const response = await api.post<{ admin: User; message: string }>('/users/admin', { name, email, password });
+      const response = await api.post<{ admin: UserProfile; message: string }>('/users/admin', { name, email, password });
       console.log('Admin created successfully');
       return response.data;
     } catch (error) {
