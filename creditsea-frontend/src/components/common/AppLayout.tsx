@@ -81,6 +81,7 @@ const AppLayout = ({ title = 'Dashboard' }: AppLayoutProps) => {
     { text: 'Repayments', icon: <PaymentIcon />, path: '/verifier/repayments' }
   ];
 
+  // Decide which items to show based on role
   const navigationItems = isAdmin() ? adminItems : verifierItems;
 
   const drawer = (
@@ -93,14 +94,17 @@ const AppLayout = ({ title = 'Dashboard' }: AppLayoutProps) => {
       <Divider />
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
         <Avatar sx={{ bgcolor: '#1e6f42', mr: 2 }}>
-          {user?.name.charAt(0) || 'U'}
+          {user?.name?.charAt(0) || 'U'}
         </Avatar>
         <Box>
           <Typography variant="subtitle1" noWrap>
             {user?.name}
           </Typography>
           <Typography variant="caption" color="textSecondary">
-            {user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}
+            {/* Safely check user?.role before calling string methods */}
+            {user?.role
+              ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+              : ''}
           </Typography>
         </Box>
       </Box>
@@ -217,6 +221,7 @@ const AppLayout = ({ title = 'Dashboard' }: AppLayoutProps) => {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="mailbox folders"
       >
+        {/* Mobile Drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -231,6 +236,7 @@ const AppLayout = ({ title = 'Dashboard' }: AppLayoutProps) => {
         >
           {drawer}
         </Drawer>
+        {/* Desktop Drawer */}
         <Drawer
           variant="permanent"
           sx={{
