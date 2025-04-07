@@ -18,7 +18,9 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  TextField
+  TextField,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import {
   MoneyOff as MoneyOffIcon,
@@ -65,73 +67,134 @@ const VerifierDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // Added successMessage state
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
   const [openVerifyDialog, setOpenVerifyDialog] = useState(false);
   const [openRejectDialog, setOpenRejectDialog] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState<LoanApplication | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        setLoading(true);
-        const { stats } = await loanService.getDashboardStats();
-        setStats(stats);
-      } catch (err) {
-        console.error('Failed to fetch dashboard stats:', err);
-        setError('Failed to load dashboard data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Helper function to refresh dashboard stats (simulate fetching loans)
+  const fetchLoans = async () => {
+    try {
+      setLoading(true);
+      const { stats } = await loanService.getDashboardStats();
+      setStats(stats);
+    } catch (err) {
+      console.error('Failed to fetch dashboard stats:', err);
+      setError('Failed to load dashboard data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchDashboardStats();
+  useEffect(() => {
+    fetchLoans();
   }, []);
 
   const handleVerifyClick = (loan: LoanApplication) => {
-    setSelectedLoan(loan);
+    console.log("Verify button clicked for loan:", loan);
+    
+    // Create a safety copy of the loan with guaranteed ID
+    const safeLoan = {
+      ...loan,
+      id: loan.id || loan._id || ''
+    };
+    
+    console.log("Loan ID:", safeLoan.id);
+    
+    setSelectedLoan(safeLoan);
     setOpenVerifyDialog(true);
   };
 
-  const handleRejectClick = (loan: LoanApplication) => {
-    setSelectedLoan(loan);
-    setOpenRejectDialog(true);
-  };
-
   const handleVerifyConfirm = async () => {
-    if (!selectedLoan) return;
+    if (!selectedLoan) {
+      console.error("No loan selected for verification");
+      setError("No loan selected for verification");
+      return;
+    }
+    
+    const loanId = selectedLoan.id || selectedLoan._id;
+    
+    if (!loanId) {
+      console.error("Selected loan has no ID:", selectedLoan);
+      setError("Cannot verify: No valid loan ID");
+      return;
+    }
     
     try {
       setActionLoading(true);
-      await loanService.verifyLoanApplication(selectedLoan.id);
+      console.log("Verifying loan ID:", loanId);
       
-      // Refresh data
-      const { stats } = await loanService.getDashboardStats();
-      setStats(stats);
+      // Call the loan service API to verify the loan application
+      const response = await loanService.verifyLoanApplication(loanId);
+      console.log("Verification response:", response);
+      
+      setSuccessMessage(`Loan application for ${selectedLoan.applicantName} has been verified successfully`);
       
       setOpenVerifyDialog(false);
-    } catch (err) {
+      await fetchLoans();
+    } catch (err: any) {
       console.error('Failed to verify loan:', err);
+      setError(err.response?.data?.message || 'Failed to verify loan. Please try again.');
     } finally {
       setActionLoading(false);
     }
   };
 
+  const handleRejectClick = (loan: LoanApplication) => {
+    console.log("Reject button clicked for loan:", loan);
+    
+    const safeLoan = {
+      ...loan,
+      id: loan.id || loan._id || ''
+    };
+    
+    console.log("Loan ID:", safeLoan.id);
+    
+    setSelectedLoan(safeLoan);
+    setOpenRejectDialog(true);
+  };
+
   const handleRejectConfirm = async () => {
-    if (!selectedLoan || !rejectionReason.trim()) return;
+    if (!selectedLoan) {
+      console.error("No loan selected for rejection");
+      setError("No loan selected for rejection");
+      return;
+    }
+    
+    const loanId = selectedLoan.id || selectedLoan._id;
+    
+    if (!loanId) {
+      console.error("Selected loan has no ID:", selectedLoan);
+      setError("Cannot reject: No valid loan ID");
+      return;
+    }
+    
+    if (!rejectionReason.trim()) {
+      console.error("Rejection reason is required");
+      setError("Please provide a reason for rejection");
+      return;
+    }
     
     try {
       setActionLoading(true);
-      await loanService.rejectLoanApplication(selectedLoan.id, rejectionReason);
+      console.log("Rejecting loan ID:", loanId, "Reason:", rejectionReason);
       
-      // Refresh data
-      const { stats } = await loanService.getDashboardStats();
-      setStats(stats);
+      // Call the loan service API to reject the loan application
+      const response = await loanService.rejectLoanApplication(loanId, rejectionReason);
+      console.log("Rejection response:", response);
+      
+      setSuccessMessage(`Loan application for ${selectedLoan.applicantName} has been rejected`);
       
       setRejectionReason('');
       setOpenRejectDialog(false);
-    } catch (err) {
+      await fetchLoans();
+    } catch (err: any) {
       console.error('Failed to reject loan:', err);
+      setError(err.response?.data?.message || 'Failed to reject loan. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -168,7 +231,7 @@ const VerifierDashboard = () => {
       ],
     };
 
-    // Simulate data for bar chart (Outstanding Loans) using the same labels
+    // Simulate data for bar chart (Outstanding Loans)
     const outstanding = sortedMonthlyData.map((data) => 
       Math.round(data.count * 1.5 + Math.random() * 100)
     );
@@ -184,7 +247,7 @@ const VerifierDashboard = () => {
       ],
     };
 
-    // Simulate data for bar chart (Repayments) using the same labels
+    // Simulate data for bar chart (Repayments)
     const repayments = sortedMonthlyData.map((data) => 
       Math.round(data.count * 0.8 + Math.random() * 20)
     );
@@ -271,6 +334,18 @@ const VerifierDashboard = () => {
 
   return (
     <Box>
+      {/* Snackbar for success messages */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={3000}
+        onClose={() => setSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
       {/* Stats Cards */}
       <Grid container spacing={3} mb={4}>
         <Grid item xs={12} sm={6} md={4} lg={2}>
@@ -456,8 +531,7 @@ const VerifierDashboard = () => {
         <DialogTitle>Verify Loan Application</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to verify this loan application for {selectedLoan?.applicantName}?
-            This will mark the application as verified and send it to an admin for final approval.
+            Are you sure you want to verify this loan application for {selectedLoan?.applicantName}? This will mark the application as verified and send it to an admin for final approval.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -1,176 +1,239 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Paper, 
+import React, { useState } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  Container,
+  Link,
+  CircularProgress,
   Alert,
-  CssBaseline
+  Grid,
+  Avatar,
+  Divider
 } from '@mui/material';
-import { Formik, Form, Field, FormikHelpers } from 'formik';
-import * as Yup from 'yup';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserRole } from '../../types';
-
-interface LoginValues {
-  email: string;
-  password: string;
-}
-
-const loginSchema = Yup.object().shape({
-  email: Yup.string().email('Invalid email address').required('Email is required'),
-  password: Yup.string().required('Password is required')
-});
+import { LockOutlined as LockIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/api';
 
 const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const initialValues: LoginValues = {
-    email: '',
-    password: ''
-  };
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
 
-  const handleSubmit = async (
-    values: LoginValues,
-    { setSubmitting }: FormikHelpers<LoginValues>
-  ) => {
     try {
+      setLoading(true);
       setError(null);
-      await login(values.email, values.password);
       
-      // Get user role from localStorage after successful login
-      const userString = localStorage.getItem('user');
-      if (userString) {
-        const user = JSON.parse(userString);
-        // Redirect based on role
-        if (user.role === UserRole.ADMIN) {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/verifier/dashboard');
-        }
+      const response = await authService.login(email, password);
+      
+      // Store token in localStorage or a secure cookie
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Redirect based on user role
+      if (response.user.role === 'verifier') {
+        navigate('/dashboard/verifier');
+      } else if (response.user.role === 'admin') {
+        navigate('/dashboard/admin');
+      } else {
+        navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      console.error('Login failed:', err);
+      setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
+    }
+  };
+
+  const setDemoCredentials = (userType: string) => {
+    switch (userType) {
+      case 'borrower':
+        setEmail('borrower@creditsea.com');
+        setPassword('Password123');
+        break;
+      case 'verifier':
+        setEmail('verifier@creditsea.com');
+        setPassword('Password123');
+        break;
+      case 'admin':
+        setEmail('admin@creditsea.com');
+        setPassword('Password123');
+        break;
     }
   };
 
   return (
-    <>
-      <CssBaseline />
-      <Box
+    <Container component="main" maxWidth="xs">
+      <Paper
+        elevation={3}
         sx={{
+          p: 4,
           display: 'flex',
-          justifyContent: 'center',
+          flexDirection: 'column',
           alignItems: 'center',
-          minHeight: '100vh',
-          bgcolor: '#ffffff',
-          margin: 0,
-          padding: 0
+          mt: 8,
+          borderRadius: 2
         }}
       >
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            padding: 4,
-            maxWidth: '400px',
-            width: '90%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            borderRadius: 2,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <Typography component="h1" variant="h3" align="center" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
-            CreditSea
-          </Typography>
-
-          <Typography component="h2" variant="h5" align="center" sx={{ mb: 4, color: 'text.secondary' }}>
-            Loan Management System
-          </Typography>
-          
-          {error && (
-            <Alert severity="error" sx={{ mb: 2, width: '100%' }}>
-              {error}
-            </Alert>
-          )}
-          
-          <Formik
-            initialValues={initialValues}
-            validationSchema={loginSchema}
-            onSubmit={handleSubmit}
+        <Avatar sx={{ m: 1, bgcolor: '#1e6f42' }}>
+          <LockIcon />
+        </Avatar>
+        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+          CreditSea Loan Management System
+        </Typography>
+        
+        {error && (
+          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ 
+              mt: 3, 
+              mb: 2, 
+              py: 1.2,
+              bgcolor: '#1e6f42',
+              '&:hover': {
+                bgcolor: '#164f2f',
+              } 
+            }}
+            disabled={loading}
           >
-            {({ errors, touched, isSubmitting }) => (
-              <Form style={{ width: '100%' }}>
-                <Box sx={{ mb: 2, width: '100%' }}>
-                  <Field
-                    as={TextField}
-                    fullWidth
-                    id="email"
-                    name="email"
-                    label="Email Address"
-                    variant="outlined"
-                    error={touched.email && !!errors.email}
-                    helperText={touched.email && errors.email}
-                  />
-                </Box>
-                
-                <Box sx={{ mb: 3, width: '100%' }}>
-                  <Field
-                    as={TextField}
-                    fullWidth
-                    id="password"
-                    name="password"
-                    label="Password"
-                    type="password"
-                    variant="outlined"
-                    error={touched.password && !!errors.password}
-                    helperText={touched.password && errors.password}
-                  />
-                </Box>
-                
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  disabled={isSubmitting}
-                  sx={{ 
-                    py: 1.5, 
-                    backgroundColor: '#1e6f42',
-                    '&:hover': {
-                      backgroundColor: '#164a2d'
-                    },
-                    textTransform: 'uppercase',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {isSubmitting ? 'Logging in...' : 'Login'}
-                </Button>
-                
-                <Box sx={{ mt: 4, textAlign: 'center' }}>
-                  <Typography variant="body2" color="textSecondary">
-                    Demo credentials:
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Admin: admin@creditsea.com / Password123
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Verifier: verifier@creditsea.com / Password123
-                  </Typography>
-                </Box>
-              </Form>
-            )}
-          </Formik>
-        </Paper>
-      </Box>
-    </>
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+          </Button>
+          <Grid container justifyContent="center">
+            <Grid item>
+              <Link href="/register" variant="body2" sx={{ color: '#1e6f42' }}>
+                {"Don't have an account? Register here"}
+              </Link>
+            </Grid>
+          </Grid>
+        </Box>
+
+        <Divider sx={{ width: '100%', my: 3 }} />
+        
+        <Box sx={{ width: '100%' }}>
+          <Typography variant="h6" gutterBottom align="center" sx={{ fontSize: '1rem', fontWeight: 500 }}>
+            Demo Credentials
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={4}>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                size="small"
+                onClick={() => setDemoCredentials('borrower')}
+                sx={{ 
+                  textTransform: 'none',
+                  borderColor: '#1e6f42',
+                  color: '#1e6f42',
+                  '&:hover': {
+                    borderColor: '#164f2f',
+                    bgcolor: 'rgba(30, 111, 66, 0.1)',
+                  }
+                }}
+              >
+                Borrower
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                size="small"
+                onClick={() => setDemoCredentials('verifier')}
+                sx={{ 
+                  textTransform: 'none',
+                  borderColor: '#1e6f42',
+                  color: '#1e6f42',
+                  '&:hover': {
+                    borderColor: '#164f2f',
+                    bgcolor: 'rgba(30, 111, 66, 0.1)',
+                  }
+                }}
+              >
+                Verifier
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                size="small"
+                onClick={() => setDemoCredentials('admin')}
+                sx={{ 
+                  textTransform: 'none',
+                  borderColor: '#1e6f42',
+                  color: '#1e6f42',
+                  '&:hover': {
+                    borderColor: '#164f2f',
+                    bgcolor: 'rgba(30, 111, 66, 0.1)',
+                  }
+                }}
+              >
+                Admin
+              </Button>
+            </Grid>
+          </Grid>
+          
+          <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="body2" gutterBottom>
+              <strong>Borrower:</strong> borrower@creditsea.com / Password123
+            </Typography>
+            <Typography variant="body2" gutterBottom>
+              <strong>Verifier:</strong> verifier@creditsea.com / Password123
+            </Typography>
+            <Typography variant="body2">
+              <strong>Admin:</strong> admin@creditsea.com / Password123
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 

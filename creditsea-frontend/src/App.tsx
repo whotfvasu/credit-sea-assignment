@@ -1,28 +1,20 @@
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { UserRole } from './types';
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 
-// Common components
+// Import components
 import Login from './components/auth/Login';
-import ProtectedRoute from './components/common/ProtectedRoute';
-import AppLayout from './components/common/AppLayout';
-import NotFound from './components/common/NotFound';
-import Unauthorized from './components/common/Unauthorized';
+import Register from './components/auth/Register';
+import AppNavigation from './components/layout/AppNavigation';
+import UserDashboard from './components/user/UserDashboard';
+import LoanApplication from './components/loan/LoanApplication';
+import VerifierDashboard from './components/verifier/VerifierDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
 
-// Admin components
-import AdminDashboard from './components/admin/Dashboard';
-import AdminLoans from './components/admin/Loans';
-import AdminManagement from './components/admin/AdminManagement';
+// Import API services
+import { authService } from './services/api';
 
-// Verifier components
-import VerifierDashboard from './components/verifier/Dashboard';
-import VerifierLoans from './components/verifier/Loans';
-
-// Loan components
-import LoanApplicationForm from './components/loans/LoanApplicationForm';
-
-// Create theme
+// Create theme with our primary green color
 const theme = createTheme({
   palette: {
     primary: {
@@ -31,110 +23,152 @@ const theme = createTheme({
     secondary: {
       main: '#f50057',
     },
-    background: {
-      default: '#ffffff',
-    },
   },
   typography: {
-    fontFamily: 'Roboto, Arial, sans-serif',
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          margin: 0,
-          padding: 0,
-          backgroundColor: '#ffffff',
-        },
-      },
-    },
-    MuiContainer: {
-      styleOverrides: {
-        root: {
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 0,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          width: '100%',
-          margin: '8px 0',
-        },
-      },
-    },
+    fontFamily: [
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+    ].join(','),
   },
 });
 
-// Component to redirect based on auth status and user role
-const RootRedirect = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+// Protected route component
+const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: string }) => {
+  const isAuthenticated = localStorage.getItem('token') !== null;
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const App = () => {
+  const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const userString = localStorage.getItem('user');
+        const user = userString ? JSON.parse(userString) : null;
+        
+        // Verify token validity
+        await authService.validateToken();
+        
+        setAuthenticated(true);
+        setUserRole(user?.role || null);
+      } catch (error) {
+        // Token is invalid, clear localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkAuthStatus();
+  }, []);
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (user?.role === UserRole.ADMIN) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  if (user?.role === UserRole.VERIFIER) {
-    return <Navigate to="/verifier/dashboard" replace />;
-  }
-
-  return <Navigate to="/login" replace />;
-};
-
-function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/apply" element={<LoanApplicationForm />} />
-            
-            {/* Redirect root to proper dashboard based on role or to login if not authenticated */}
-            <Route path="/" element={<RootRedirect />} />
-
-            {/* Unauthorized access */}
-            <Route path="/unauthorized" element={<Unauthorized />} />
-
-            {/* Admin routes */}
-            <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
-              <Route element={<AppLayout title="Admin Dashboard" />}>
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/loans" element={<AdminLoans />} />
-                <Route path="/admin/manage" element={<AdminManagement />} />
-                <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
-              </Route>
-            </Route>
-
-            {/* Verifier routes */}
-            <Route element={<ProtectedRoute allowedRoles={[UserRole.VERIFIER]} />}>
-              <Route element={<AppLayout title="Verifier Dashboard" />}>
-                <Route path="/verifier/dashboard" element={<VerifierDashboard />} />
-                <Route path="/verifier/loans" element={<VerifierLoans />} />
-                <Route path="/verifier/*" element={<Navigate to="/verifier/dashboard" replace />} />
-              </Route>
-            </Route>
-
-            {/* Catch all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Private routes with layout */}
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <AppNavigation>
+                  {authenticated && userRole === 'verifier' ? (
+                    <Navigate to="/dashboard/verifier" replace />
+                  ) : authenticated && userRole === 'admin' ? (
+                    <Navigate to="/dashboard/admin" replace />
+                  ) : (
+                    <Navigate to="/dashboard" replace />
+                  )}
+                </AppNavigation>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* User routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <AppNavigation>
+                  <UserDashboard />
+                </AppNavigation>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/apply" 
+            element={
+              <ProtectedRoute>
+                <AppNavigation>
+                  <LoanApplication />
+                </AppNavigation>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Verifier routes */}
+          <Route 
+            path="/dashboard/verifier" 
+            element={
+              <ProtectedRoute requiredRole="verifier">
+                <AppNavigation>
+                  <VerifierDashboard />
+                </AppNavigation>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin routes */}
+          <Route 
+            path="/dashboard/admin" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AppNavigation>
+                  <AdminDashboard />
+                </AppNavigation>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
-}
+};
 
 export default App;

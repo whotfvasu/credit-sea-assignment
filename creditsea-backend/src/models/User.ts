@@ -2,8 +2,9 @@ import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export enum UserRole {
+  ADMIN = 'admin',
   VERIFIER = 'verifier',
-  ADMIN = 'admin'
+  BORROWER = 'borrower'
 }
 
 export interface IUser extends Document {
