@@ -5,6 +5,12 @@ import {
   UserRole
 } from '../types';
 
+// Define an interface for the login response
+interface LoginResponse {
+  token: string;
+  user: UserProfile;
+}
+
 // Create axios instance with base URL
 // Use import.meta.env for Vite environment variables
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -53,10 +59,10 @@ const getLoanId = (loan: LoanApplication | string): string => {
 // Auth Service
 export const authService = {
   // Login user
-  login: async (email: string, password: string): Promise<Response> => {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
     console.log(`Attempting login for user: ${email}`);
     try {
-      const response = await api.post<Response>('/auth/login', { email, password });
+      const response = await api.post<LoginResponse>('/auth/login', { email, password });
       console.log('Login successful');
       return response.data;
     } catch (error) {
@@ -79,31 +85,30 @@ export const authService = {
   },
   
   // Logout user
- // Logout user
-logout: async () => {
-  console.log('Logging out user');
-  try {
-    // Option 1: If your backend has a logout endpoint
-    // try {
-    //   await api.post('/auth/logout');
-    // } catch (error) {
-    //   console.warn('Logout API call failed, continuing with local logout');
-    // }
-    
-    // Option 2: Client-side logout (more reliable if backend endpoint is missing)
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    console.log('Logout successful');
-    
-    // Redirect to login page
-    window.location.href = '/login';
-    
-    return { success: true, message: 'Logged out successfully' };
-  } catch (error) {
-    console.error('Logout failed:', error);
-    throw error;
-  }
-},
+  logout: async () => {
+    console.log('Logging out user');
+    try {
+      // Option 1: If your backend has a logout endpoint
+      // try {
+      //   await api.post('/auth/logout');
+      // } catch (error) {
+      //   console.warn('Logout API call failed, continuing with local logout');
+      // }
+      
+      // Option 2: Client-side logout (more reliable if backend endpoint is missing)
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      console.log('Logout successful');
+      
+      // Redirect to login page
+      window.location.href = '/login';
+      
+      return { success: true, message: 'Logged out successfully' };
+    } catch (error) {
+      console.error('Logout failed:', error);
+      throw error;
+    }
+  },
   
   // Validate token
   validateToken: async () => {
@@ -157,11 +162,11 @@ export const userService = {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return {
-      name: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').name : 'User',
-      email: '',
-      role: UserRole.BORROWER,
-      createdAt: new Date().toISOString()
-    };
+        name: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}').name : 'User',
+        email: '',
+        role: UserRole.BORROWER,
+        createdAt: new Date().toISOString()
+      };
     }
   },
   
@@ -232,42 +237,43 @@ export const userService = {
 export const loanService = {
   // Submit loan application
   submitLoanApplication: async (loanData: any) => {
-  // Create a new object with the correct field name structure
-  const formattedData = {
-    ...loanData,
-    loanAmount: loanData.loanAmount // Ensure this field exists
-  };
-  
-  console.log('API sending:', formattedData);
-  
-  try {
-    const response = await api.post('/loans', formattedData);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating loan application:', error);
-    throw error;
-  }
-},
+    // Create a new object with the correct field name structure
+    const formattedData = {
+      ...loanData,
+      loanAmount: loanData.loanAmount // Ensure this field exists
+    };
+
+    console.log('API sending:', formattedData);
+
+    try {
+      const response = await api.post('/loans', formattedData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating loan application:', error);
+      throw error;
+    }
+  },
   
   // Get user's loan applications
-getUserLoanApplications: async (): Promise<LoanApplication[]> => {
-  console.log('Fetching user loan applications');
-  try {
-    const response = await api.get('/loans/user');
-    // Handle different response structures
-    if (Array.isArray(response.data)) {
-      console.log(`Fetched ${response.data.length} user loan applications`);
-      return response.data;
-    } else if (response.data && response.data.applications) {
-      console.log(`Fetched ${response.data.applications.length} user loan applications`);
-      return response.data.applications;
+  getUserLoanApplications: async (): Promise<LoanApplication[]> => {
+    console.log('Fetching user loan applications');
+    try {
+      const response = await api.get('/loans/user');
+      // Handle different response structures
+      if (Array.isArray(response.data)) {
+        console.log(`Fetched ${response.data.length} user loan applications`);
+        return response.data;
+      } else if (response.data && response.data.applications) {
+        console.log(`Fetched ${response.data.applications.length} user loan applications`);
+        return response.data.applications;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching user loan applications:', error);
+      return [];
     }
-    return [];
-  } catch (error) {
-    console.error('Error fetching user loan applications:', error);
-    return [];
-  }
-},
+  },
+  
   // Get all loan applications (for verifier/admin)
   getAllLoanApplications: async (): Promise<{ applications: LoanApplication[] }> => {
     console.log('Fetching all loan applications');
@@ -345,27 +351,27 @@ getUserLoanApplications: async (): Promise<LoanApplication[]> => {
   
   // Get dashboard stats
   getDashboardStats: async () => {
-  console.log('Fetching dashboard statistics');
-  try {
-    const response = await api.get('/loans/dashboard');
-    console.log('Dashboard statistics fetched successfully');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching dashboard statistics:', error);
-    // Return default stats to prevent UI crashes
-    return {
-      totalLoans: 0,
-      totalBorrowers: 0,
-      totalAmount: 0,
-      totalPending: 0,
-      totalVerified: 0,
-      totalApproved: 0,
-      totalRejected: 0,
-      monthlyData: [],
-      recentApplications: []
-    };
-  }
-},
+    console.log('Fetching dashboard statistics');
+    try {
+      const response = await api.get('/loans/dashboard');
+      console.log('Dashboard statistics fetched successfully');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching dashboard statistics:', error);
+      // Return default stats to prevent UI crashes
+      return {
+        totalLoans: 0,
+        totalBorrowers: 0,
+        totalAmount: 0,
+        totalPending: 0,
+        totalVerified: 0,
+        totalApproved: 0,
+        totalRejected: 0,
+        monthlyData: [],
+        recentApplications: []
+      };
+    }
+  },
   
   // Get loan repayment schedule
   getLoanRepaymentSchedule: async (loanId: string) => {

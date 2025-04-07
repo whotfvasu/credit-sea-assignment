@@ -13,7 +13,6 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Button,
   Avatar,
   Menu,
   MenuItem,
@@ -57,7 +56,6 @@ const AppNavigation: React.FC<AppNavigationProps> = ({ children }) => {
   
   const isVerifier = user?.role === 'verifier';
   const isAdmin = user?.role === 'admin';
-  const isBorrower = !isVerifier && !isAdmin;
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
