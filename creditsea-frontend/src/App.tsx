@@ -8,7 +8,7 @@ import Register from './components/auth/Register';
 import AppNavigation from './components/layout/AppNavigation';
 import UserDashboard from './components/user/UserDashboard';
 import LoanApplication from './components/loan/LoanApplication';
-import VerifierDashboard from './components/verifier/VerifierDashboard';
+import VerifierDashboard from './components/verifier/VerifyDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 
 // Import API services
