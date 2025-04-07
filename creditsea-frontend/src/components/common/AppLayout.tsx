@@ -26,7 +26,6 @@ import {
   People as PeopleIcon,
   Description as DescriptionIcon,
   Payment as PaymentIcon,
-  Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
   AccountCircle,
   NotificationsActive as NotificationIcon,
